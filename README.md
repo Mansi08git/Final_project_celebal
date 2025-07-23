@@ -75,11 +75,11 @@ streamlit run app.py
 
 ## 📦 Dependencies
 ``` bash
-streamlit==1.28.1
-pandas==2.0.3
-numpy==1.24.3
-scikit-learn==1.3.0
-plotly==5.15.0
+streamlit
+pandas
+numpy
+scikit-learn
+plotly
 ```
 
 ## 🎮 How to Use the App
