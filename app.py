@@ -124,9 +124,9 @@ def prepare_features(data):
     # Handle missing values
     for col in df_model.columns:
         if df_model[col].dtype == 'object':
-            df_model[col].fillna('Unknown', inplace=True)
+            df_model[col] = df_model[col].fillna('Unknown')
         else:
-            df_model[col].fillna(df_model[col].median(), inplace=True)
+            df_model[col] = df_model[col].fillna(df_model[col].median())
     
     # Encode categorical variables
     label_encoders = {}
