@@ -44,6 +44,31 @@ st.markdown("""
         text-align: center;
         margin: 1rem 0;
     }
+    .custom-input-container {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 0.5rem 0;
+        border: 1px solid #dee2e6;
+    }
+    .increment-button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 0 0.25rem;
+    }
+    .decrement-button {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 0 0.25rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -174,6 +199,51 @@ def train_models(X, y):
     
     return trained_models, model_scores, best_model_name, best_model, X_test, y_test
 
+def custom_number_input_with_buttons(label, min_val, max_val, default_val, step=5, key=None):
+    """Create a custom number input with increment/decrement buttons"""
+    
+    # Initialize session state if not exists
+    if key not in st.session_state:
+        st.session_state[key] = default_val
+    
+    st.markdown(f"**{label}**")
+    
+    # Create columns for layout
+    col1, col2, col3, col4, col5 = st.columns([1, 1, 2, 1, 1])
+    
+    with col1:
+        if st.button(f"-{step}", key=f"dec_{key}"):
+            new_val = max(min_val, st.session_state[key] - step)
+            st.session_state[key] = new_val
+    
+    with col2:
+        if st.button(f"+{step}", key=f"inc_{key}"):
+            new_val = min(max_val, st.session_state[key] + step)
+            st.session_state[key] = new_val
+    
+    with col3:
+        # Manual input field
+        manual_input = st.number_input(
+            f"Current {label}",
+            min_value=float(min_val),
+            max_value=float(max_val),
+            value=float(st.session_state[key]),
+            key=f"manual_{key}",
+            label_visibility="collapsed"
+        )
+        
+        # Update session state if manual input changes
+        if manual_input != st.session_state[key]:
+            st.session_state[key] = manual_input
+    
+    with col4:
+        st.write(f"Min: {min_val}")
+    
+    with col5:
+        st.write(f"Max: {max_val}")
+    
+    return st.session_state[key]
+
 def create_visualizations(data, features, y_test, y_pred, feature_importance=None):
     """Create visualizations for the app"""
     
@@ -275,7 +345,7 @@ def main():
             
             for feature in features:
                 if feature in label_encoders:
-                    # Categorical feature
+                    # Categorical feature - keep as selectbox
                     options = list(label_encoders[feature].classes_)
                     user_inputs[feature] = st.selectbox(f"{feature}", options)
                 else:
@@ -284,40 +354,52 @@ def main():
                     max_val = float(df_model[feature].max())
                     mean_val = float(df_model[feature].mean())
                     
+                    # Special handling for the three specified features
                     if feature == 'GrLivArea':
-                        user_inputs[feature] = st.slider(
+                        user_inputs[feature] =  st.number_input(
                             "Living Area (sq ft)", 
-                            min_value=int(min_val), 
-                            max_value=int(max_val), 
-                            value=int(mean_val)
-                        )
-                    elif feature == 'OverallQual':
-                        user_inputs[feature] = st.slider(
-                            "Overall Quality (1-10)", 
-                            min_value=int(min_val), 
-                            max_value=int(max_val), 
-                            value=int(mean_val)
-                        )
-                    elif feature == 'YearBuilt':
-                        user_inputs[feature] = st.slider(
-                            "Year Built", 
-                            min_value=int(min_val), 
-                            max_value=int(max_val), 
-                            value=int(mean_val)
-                        )
-                    elif feature == 'BedroomAbvGr' or 'bedroom' in feature.lower():
-                        user_inputs[feature] = st.slider(
-                            "Number of Bedrooms", 
-                            min_value=int(max(1, min_val)), 
-                            max_value=int(max_val), 
-                            value=int(mean_val)
+                            int(min_val), 
+                            int(max_val), 
+                            int(mean_val),
+                            step=5,
+                            key="living_area"
                         )
                     elif feature == 'GarageArea':
-                        user_inputs[feature] = st.slider(
+                        user_inputs[feature] =  st.number_input(
                             "Garage Area (sq ft)", 
-                            min_value=int(min_val), 
-                            max_value=int(max_val), 
-                            value=int(mean_val)
+                            int(min_val), 
+                            int(max_val), 
+                            int(mean_val),
+                            step=5,
+                            key="garage_area"
+                        )
+                    elif feature == 'OverallQual':
+                        user_inputs[feature] =  st.number_input(
+                            "Overall Quality (1-10)", 
+                            int(min_val), 
+                            int(max_val), 
+                            int(mean_val),
+                            step=1,  # For quality, increment by 1
+                            key="overall_quality"
+                        )
+                    # Keep other features as regular inputs
+                    elif feature == 'YearBuilt':
+                        user_inputs[feature] = st.number_input(
+                            "Year Built", 
+                            int(min_val), 
+                            int(max_val), 
+                            int(mean_val),
+                            step=5,  # For quality, increment by 1
+                            key="year_built"
+                        )
+                    elif feature == 'BedroomAbvGr' or 'bedroom' in feature.lower():
+                        user_inputs[feature] = st.number_input(
+                            "Number of Bedrooms", 
+                            int(min_val), 
+                            int(max_val), 
+                            int(mean_val),
+                            step=1,  # For quality, increment by 1
+                            key="bedroom_abr_gr"
                         )
                     else:
                         user_inputs[feature] = st.number_input(
@@ -476,6 +558,9 @@ def main():
         - **MAE**: Mean Absolute Error in dollars
         - **RMSE**: Root Mean Square Error in dollars
         
+        **Enhanced Input Features:**
+        - **Living Area, Garage Area, Overall Quality**: Custom input fields with +5/-5 increment buttons and manual entry
+        - **Other Features**: Traditional sliders and select boxes
         
         ### 📊 Data Source
         Based on the Kaggle House Prices: Advanced Regression Techniques competition dataset.
